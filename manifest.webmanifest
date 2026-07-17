@@ -1,0 +1,40 @@
+{
+  "name": "Neo Copilot — Cartografia do Conhecimento",
+  "short_name": "Neo Copilot",
+  "description": "Transforma documentos corporativos em ativos de aprendizado com IA (resumo, glossário, FAQ, flashcards, quiz) e chat baseado em RAG.",
+  "id": "/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#1B2430",
+  "background_color": "#F5F7FA",
+  "lang": "pt-BR",
+  "categories": ["productivity", "education", "business"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neo Copilot — Cartografia do Conhecimento</title>
+  <meta name="description" content="Neo Copilot: transforma documentos corporativos em ativos de aprendizado com IA (resumo, glossário, FAQ, flashcards, quiz) e chat baseado em RAG." />
+
+  <!-- =========================================================================
+       Neo Copilot — Protótipo funcional
+       Design system: Cartografia do Conhecimento
+       Stack: HTML + CSS + JavaScript vanilla, PDF.js via CDN.
+       ------------------------------------------------------------------------
+       IMPORTANTE (segurança da API key):
+       Este protótipo chama https://generativelanguage.googleapis.com diretamente
+       do navegador para fins de DEMONSTRAÇÃO. Em produção, a chamada precisa
+       obrigatoriamente passar por um backend proxy — nunca expor a chave no
+       front-end. Nenhuma chave é hardcoded aqui: o usuário informa a chave em
+       um modal e ela é mantida apenas em sessionStorage (limpa ao fechar a aba).
+       ========================================================================= -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Favicons & PWA -->
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#1B2430" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Neo Copilot" />
+  <meta name="mobile-web-app-capable" content="yes" />
+</head>
+<body>
+
+  <!-- =========================================================
+       TOPBAR
+       ========================================================= -->
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <!-- Bússola -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">Neo Copilot</div>
+        <div class="brand-sub">Cartografia do Conhecimento · v1.0</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn ghost" id="btn-settings" aria-label="Configurar chave da API">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span class="btn-label">Configurações</span>
+      </button>
+      <button class="btn accent" id="btn-new-doc" aria-label="Novo documento">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+        <span class="btn-label">Novo documento</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       APP
+       ========================================================= -->
+  <main class="app" id="app-root">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Documento carregado e status de processamento">
+
+      <!-- Dropzone (estado vazio) -->
+      <div class="panel-card" id="dropzone-card">
+        <h2 class="card-title">Entrada de Documento</h2>
+        <label class="dropzone" id="dropzone" tabindex="0" aria-label="Arraste um PDF aqui ou clique para selecionar">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <p class="dropzone-title">Solte um ou mais PDFs</p>
+          <p class="dropzone-hint">ou <strong>clique para selecionar</strong> · até 20 MB cada</p>
+          <input type="file" id="file-input" accept="application/pdf,.pdf" multiple aria-label="Selecionar arquivos PDF" />
+        </label>
+      </div>
+
+      <!-- Documento carregado -->
+      <div class="panel-card doc-card" id="doc-card" hidden>
+        <h2 class="card-title">Documentos em Análise</h2>
+        <div class="doc-coordinates" id="doc-coord">01.A · —</div>
+        <h3 class="doc-name" id="doc-name">—</h3>
+        <ul class="doc-file-list" id="doc-file-list" hidden></ul>
+        <div class="doc-meta" id="doc-meta"></div>
+        <div class="doc-actions">
+          <button class="btn" id="btn-swap-doc">Trocar</button>
+          <span class="badge teal" id="doc-badge">Novo</span>
+        </div>
+      </div>
+
+      <!-- Pipeline de processamento -->
+      <div class="panel-card" id="pipeline-card" hidden>
+        <h2 class="card-title">Pipeline Cognitivo</h2>
+        <div class="pipeline" id="pipeline">
+          <div class="step" data-step="read"><span class="step-dot"></span><span>Lendo PDF</span></div>
+          <div class="step" data-step="extract"><span class="step-dot"></span><span>Extraindo texto</span></div>
+          <div class="step" data-step="interpret"><span class="step-dot"></span><span>Interpretando conteúdo</span></div>
+          <div class="step" data-step="generate"><span class="step-dot"></span><span>Gerando ativos de aprendizado</span></div>
+        </div>
+      </div>
+
+      <!-- Erros -->
+      <div class="error-banner" id="error-banner" role="alert" aria-live="assertive">
+        <strong id="error-title">Ocorreu um problema</strong>
+        <span id="error-message">—</span>
+        <div style="margin-top: 10px;">
+          <button class="btn" id="error-retry">Tentar outro arquivo</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Workspace / Abas -->
+    <section class="workspace" aria-label="Ativos de aprendizado gerados">
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" aria-selected="true" data-tab="resumo" id="tab-resumo">Resumo</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="glossario" id="tab-glossario">Glossário <span class="tab-count" id="cnt-glossario">0</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="faq" id="tab-faq">FAQ <span class="tab-count" id="cnt-faq">0</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="flashcards" id="tab-flashcards">Flashcards <span class="tab-count" id="cnt-flashcards">0</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="quiz" id="tab-quiz">Quiz <span class="tab-count" id="cnt-quiz">0</span></button>
+        <button class="tab secondary" role="tab" aria-selected="false" data-tab="admin" id="tab-admin">Admin</button>
+        <button class="tab secondary" role="tab" aria-selected="false" data-tab="gestor" id="tab-gestor">Gestor</button>
+      </div>
+
+      <div class="tab-panels">
+
+        <!-- Resumo -->
+        <div class="panel active" role="tabpanel" data-panel="resumo" aria-labelledby="tab-resumo">
+          <div class="empty-state" id="empty-resumo">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+            <h2>Comece pelo mapa.</h2>
+            <p>Solte um PDF no lado esquerdo e o Neo Copilot decifra o conteúdo, gera o resumo executivo, o glossário técnico, FAQ, flashcards e um quiz — tudo em tempo real, direto do documento.</p>
+            <div class="empty-hint">01.A · aguardando ancoragem</div>
+          </div>
+          <div id="content-resumo" hidden></div>
+        </div>
+
+        <!-- Glossário -->
+        <div class="panel" role="tabpanel" data-panel="glossario" aria-labelledby="tab-glossario" hidden>
+          <div class="section-header">
+            <h2 class="section-title">Glossário</h2>
+            <span class="section-hint" id="hint-glossario">0 termos identificados</span>
+          </div>
+          <div class="glossary-list" id="content-glossario"></div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="panel" role="tabpanel" data-panel="faq" aria-labelledby="tab-faq" hidden>
+          <div class="section-header">
+            <h2 class="section-title">Perguntas Frequentes</h2>
+            <span class="section-hint" id="hint-faq">geradas a partir do documento</span>
+          </div>
+          <div class="faq-list" id="content-faq"></div>
+        </div>
+
+        <!-- Flashcards -->
+        <div class="panel" role="tabpanel" data-panel="flashcards" aria-labelledby="tab-flashcards" hidden>
+          <div class="section-header">
+            <h2 class="section-title">Flashcards</h2>
+            <span class="section-hint">clique para virar · estudo ativo</span>
+          </div>
+          <div class="flashcards-grid" id="content-flashcards"></div>
+        </div>
+
+        <!-- Quiz -->
+        <div class="panel" role="tabpanel" data-panel="quiz" aria-labelledby="tab-quiz" hidden>
+          <div class="section-header">
+            <h2 class="section-title">Quiz</h2>
+            <span class="section-hint" id="hint-quiz">avalie sua compreensão</span>
+          </div>
+          <div id="content-quiz"></div>
+          <div id="quiz-score" style="display:none; margin-top:20px; padding:16px; background: var(--slate); border-radius: var(--radius); text-align:center;">
+            <div class="section-hint">Resultado</div>
+            <div style="font-family: var(--font-display); font-size: 30px; font-weight: 700; color: var(--ink); margin-top:6px;" id="quiz-score-value">—</div>
+          </div>
+        </div>
+
+        <!-- Admin (estático) -->
+        <div class="panel" role="tabpanel" data-panel="admin" aria-labelledby="tab-admin" hidden>
+          <div class="section-header">
+            <h2 class="section-title">Console Administrativo</h2>
+            <span class="section-hint">visualização de exemplo</span>
+          </div>
+          <div class="static-grid">
+            <div class="kpi-card"><p class="kpi-label">Documentos ativos</p><p class="kpi-value">147</p><p class="kpi-delta">+12 esta semana</p></div>
+            <div class="kpi-card"><p class="kpi-label">Ativos gerados</p><p class="kpi-value">2 384</p><p class="kpi-delta">+318 esta semana</p></div>
+            <div class="kpi-card"><p class="kpi-label">Consultas ao chat</p><p class="kpi-value">5 621</p><p class="kpi-delta">+9% vs. mês anterior</p></div>
+            <div class="kpi-card"><p class="kpi-label">Docs para revisar</p><p class="kpi-value">7</p><p class="kpi-delta negative">3 vencidos</p></div>
+          </div>
+
+          <div class="doc-list" aria-label="Últimos documentos indexados">
+            <div class="doc-row header">
+              <span>Documento</span>
+              <span class="col-hide">Setor</span>
+              <span class="col-hide">Versão</span>
+              <span>Status</span>
+            </div>
+            <div class="doc-row">
+              <span><span class="coord">03.B ·</span> Guia_Arquitetura_Microsserviços.pdf</span>
+              <span class="col-hide">Desenvolvimento</span>
+              <span class="col-hide coord">v2.4</span>
+              <span><span class="badge sage">Atualizado</span></span>
+            </div>
+            <div class="doc-row">
+              <span><span class="coord">04.A ·</span> Politica_Compliance_2026.pdf</span>
+              <span class="col-hide">RH</span>
+              <span class="col-hide coord">v1.2</span>
+              <span><span class="badge amber">Revisar</span></span>
+            </div>
+            <div class="doc-row">
+              <span><span class="coord">02.C ·</span> Manual_Onboarding_QA.docx</span>
+              <span class="col-hide">Qualidade</span>
+              <span class="col-hide coord">v3.0</span>
+              <span><span class="badge teal">Novo</span></span>
+            </div>
+            <div class="doc-row">
+              <span><span class="coord">05.D ·</span> Catalogo_Produtos_Q3.pdf</span>
+              <span class="col-hide">Comercial</span>
+              <span class="col-hide coord">v4.1</span>
+              <span><span class="badge sage">Atualizado</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gestor (estático) -->
+        <div class="panel" role="tabpanel" data-panel="gestor" aria-labelledby="tab-gestor" hidden>
+          <div class="section-header">
+            <h2 class="section-title">Painel de Gestão</h2>
+            <span class="section-hint">visualização de exemplo</span>
+          </div>
+          <div class="static-grid">
+            <div class="kpi-card"><p class="kpi-label">Onboarding médio</p><p class="kpi-value">6 dias</p><p class="kpi-delta">−58% vs. antes do Neo</p></div>
+            <div class="kpi-card"><p class="kpi-label">Adoção da equipe</p><p class="kpi-value">92%</p><p class="kpi-delta">42/46 colaboradores</p></div>
+            <div class="kpi-card"><p class="kpi-label">Quiz — média</p><p class="kpi-value">84%</p><p class="kpi-delta">+7 pp no trimestre</p></div>
+            <div class="kpi-card"><p class="kpi-label">Interrupções a especialistas</p><p class="kpi-value">−47%</p><p class="kpi-delta">tickets internos</p></div>
+          </div>
+          <div style="margin-top:24px; padding: 18px; background: var(--slate); border-radius: var(--radius); border: 1px solid var(--line); font-size: 14px; color: var(--ink-soft); line-height:1.65;">
+            <strong style="color:var(--ink);">Insight do trimestre:</strong> a área de <em>Qualidade</em> apresentou o maior crescimento em consumo de flashcards (+134%), correlacionado a uma redução de 21% em bugs de regressão em produção.
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- =========================================================
+       CHAT FLUTUANTE — BÚSSOLA
+       ========================================================= -->
+  <button class="compass-fab" id="fab-chat" aria-label="Abrir Bússola (chat sobre o documento)">
+    <svg class="compass-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+    </svg>
+    <span class="fab-label">Bússola</span>
+  </button>
+
+  <div class="chat-panel" id="chat-panel" role="dialog" aria-label="Chat Bússola" hidden>
+    <div class="chat-header">
+      <h3 class="chat-title">
+        <svg class="chat-title-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+        Bússola
+      </h3>
+      <button class="chat-close" id="chat-close" aria-label="Fechar chat">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <div class="chat-context" id="chat-context">Sem documento ancorado</div>
+    <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
+    <form class="chat-form" id="chat-form">
+      <textarea class="chat-input" id="chat-input" rows="1" placeholder="Pergunte algo sobre o documento…" aria-label="Mensagem para a Bússola"></textarea>
+      <button type="submit" class="chat-send" id="chat-send" aria-label="Enviar mensagem" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"></path><path d="M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+      </button>
+    </form>
+  </div>
+
+  <!-- =========================================================
+       MODAL — Configuração da API key
+       ========================================================= -->
+  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <h2 id="modal-title">Chave da API Google Gemini</h2>
+      <p>Este protótipo faz chamadas reais à API <code>gemini-flash-latest</code> (tier gratuito, sem cartão). Crie uma chave em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> e cole abaixo.</p>
+      <div class="modal-warn">
+        <strong>Aviso de segurança:</strong> a chave fica apenas em <code>sessionStorage</code> (limpa ao fechar a aba) e é enviada direto do navegador para <code>generativelanguage.googleapis.com</code>. Em produção, essa chamada deve passar por um <strong>backend proxy</strong>.
+      </div>
+      <label for="input-api-key">Google Gemini API Key</label>
+      <input type="password" id="input-api-key" placeholder="AQ.Ab… ou AIzaSy…" autocomplete="off" spellcheck="false" />
+      <div class="modal-actions">
+        <button class="btn ghost" id="modal-cancel">Cancelar</button>
+        <button class="btn primary" id="modal-save">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="sr-only" id="live-status" aria-live="polite"></div>
+
+  <!-- =========================================================
+       Dependências externas (PDF.js UMD via CDN cdnjs)
+       Versão 3.11.x é a última que expõe window.pdfjsLib global.
+       A partir da 4.x o cdnjs só distribui como ES module (.mjs).
+       ========================================================= -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- =========================================================
+       Módulos do Neo Copilot
+       A ordem importa: dependências vêm antes dos consumidores.
+       config → dom-util → api-key-store → pipeline / pdf-extractor
+       → product-knowledge → ai-client → ui-renderer → chat-controller → app
+       ========================================================= -->
+  <script src="js/config.js"></script>
+  <script src="js/dom-util.js"></script>
+  <script src="js/api-key-store.js"></script>
+  <script src="js/pipeline.js"></script>
+  <script src="js/pdf-extractor.js"></script>
+  <script src="js/product-knowledge.js"></script>
+  <script src="js/ai-client.js"></script>
+  <script src="js/ui-renderer.js"></script>
+  <script src="js/chat-controller.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
