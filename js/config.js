@@ -16,4 +16,12 @@ const Config = Object.freeze({
   // Em produção, substituir por chunking + embeddings + retrieval.
   MAX_DOC_CHARS: 120000,
   MAX_CHAT_HISTORY: 8, // pares de mensagens mantidas na chamada
+
+  // === Limites de ativos de aprendizado (configuráveis pelo usuário) ===
+  DEFAULT_FAQ_COUNT: 8,       // padrão 5-8; máximo permitido 15
+  DEFAULT_FLASHCARD_COUNT: 8, // padrão 8; máximo permitido 20
+  DEFAULT_QUIZ_COUNT: 5,      // padrão 5; máximo permitido 15
+  MAX_FAQ_COUNT: 15,
+  MAX_FLASHCARD_COUNT: 20,
+  MAX_QUIZ_COUNT: 15,
 });

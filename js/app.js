@@ -56,17 +56,42 @@ class App {
     const cancelBtn = document.getElementById('modal-cancel');
     const saveBtn = document.getElementById('modal-save');
     const keyInput = document.getElementById('input-api-key');
+    
+    // Inputs de configuração de ativos
+    const faqInput = document.getElementById('input-faq-count');
+    const flashcardInput = document.getElementById('input-flashcard-count');
+    const quizInput = document.getElementById('input-quiz-count');
+    const faqDisplay = document.getElementById('faq-count-display');
+    const flashcardDisplay = document.getElementById('flashcard-count-display');
+    const quizDisplay = document.getElementById('quiz-count-display');
 
     const openModal = () => {
       keyInput.value = ApiKeyStore.get();
+      faqInput.value = AssetsSettings.faqCount;
+      flashcardInput.value = AssetsSettings.flashcardCount;
+      quizInput.value = AssetsSettings.quizCount;
+      _updateAssetDisplays();
       backdrop.classList.add('visible');
       setTimeout(() => keyInput.focus(), 60);
     };
+    
+    const _updateAssetDisplays = () => {
+      faqDisplay.textContent = faqInput.value;
+      flashcardDisplay.textContent = flashcardInput.value;
+      quizDisplay.textContent = quizInput.value;
+    };
+    
     const closeModal = () => backdrop.classList.remove('visible');
 
     openBtn.addEventListener('click', openModal);
     cancelBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+    
+    // Event listeners para atualizar displays em tempo real
+    faqInput.addEventListener('input', _updateAssetDisplays);
+    flashcardInput.addEventListener('input', _updateAssetDisplays);
+    quizInput.addEventListener('input', _updateAssetDisplays);
+    
     saveBtn.addEventListener('click', () => {
       const val = keyInput.value.trim();
       // Google Gemini API keys aceitam múltiplos formatos:
@@ -77,11 +102,35 @@ class App {
         DOMUtil.toast('Chave muito curta — verifique se copiou o valor completo.');
       }
       if (val) ApiKeyStore.set(val); else ApiKeyStore.clear();
+      
+      // Salvar configurações de ativos
+      AssetsSettings.setFaqCount(faqInput.value);
+      AssetsSettings.setFlashcardCount(flashcardInput.value);
+      AssetsSettings.setQuizCount(quizInput.value);
+      
       closeModal();
-      DOMUtil.toast(val ? 'Chave salva na sessão.' : 'Chave removida.');
+      DOMUtil.toast((val ? 'Chave e ' : '') + 'configurações salvas.');
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && backdrop.classList.contains('visible')) closeModal();
+    });
+
+    // Tab switching logic
+    const tabs = document.querySelectorAll('.modal-tab');
+    const panes = document.querySelectorAll('.modal-pane');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.getAttribute('data-tab');
+        
+        // Remove active from all tabs and panes
+        tabs.forEach(t => t.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        
+        // Add active to clicked tab and corresponding pane
+        tab.classList.add('active');
+        document.querySelector(`[data-pane="${targetTab}"]`).classList.add('active');
+      });
     });
 
     this._openModal = openModal;

@@ -14,6 +14,10 @@ class AIClient {
   }
 
   _buildAssetsPrompt() {
+    const faqCount = AssetsSettings.faqCount;
+    const fcCount = AssetsSettings.flashcardCount;
+    const quizCount = AssetsSettings.quizCount;
+    
     return [
       'Você é o motor cognitivo do Neo Copilot, uma plataforma corporativa de gestão de conhecimento.',
       'Sua tarefa é transformar o conteúdo de UM documento corporativo em ativos de aprendizado estruturados.',
@@ -30,8 +34,8 @@ class AIClient {
       '  "resumo_tecnico": "6 a 10 frases com maior profundidade técnica/procedural",',
       '  "topicos_chave": ["6 a 10 bullets objetivos com os principais pontos"],',
       '  "glossario": [ { "termo": "string", "definicao": "string curta e precisa" } ],  // 6 a 12 itens',
-      '  "faq": [ { "pergunta": "string", "resposta": "string" } ],  // 5 a 8 itens',
-      '  "flashcards": [ { "frente": "conceito/termo/pergunta curta", "verso": "definição/resposta" } ],  // exatamente 8 itens',
+      `  "faq": [ { "pergunta": "string", "resposta": "string" } ],  // ${faqCount} itens`,
+      `  "flashcards": [ { "frente": "conceito/termo/pergunta curta", "verso": "definição/resposta" } ],  // exatamente ${fcCount} itens`,
       '  "quiz": [',
       '    {',
       '      "pergunta": "string",',
@@ -39,7 +43,7 @@ class AIClient {
       '      "gabarito": 0,  // índice 0..3',
       '      "explicacao": "por que essa é correta, curta"',
       '    }',
-      '  ]  // exatamente 5 questões',
+      `  ]  // exatamente ${quizCount} questões`,
       '}',
     ].join('\n');
   }
